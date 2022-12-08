@@ -216,3 +216,12 @@ def get_descritization_method(self):
     # json_data = self.raw_class.get_descritization_method(self.dataset_path)
     # return json_data
     return ""
+
+def get_negative_data(dataset_name):
+    dataset_path = os.path.join(
+        current_app.config["DATASETS_ROOT"], dataset_name
+    )
+    with open(dataset_path, "r") as file:
+        data = json.load(file)
+        return json.dumps(data)
+        

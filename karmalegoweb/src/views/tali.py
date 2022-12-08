@@ -99,3 +99,8 @@ def get_descritization_method():
     # global api
     # return api.get_descritization_method()
     return ""
+
+@bp.route("/get_negative_data")  # descrite data loading
+def get_negative_data():
+    name = "OutputAlgoritm.json"
+    return api.get_negative_data(dataset_name=name)
