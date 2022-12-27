@@ -1,3 +1,4 @@
+import ast
 from flask import current_app, g
 from karmalegoweb.src.Visualization.Tali import Create_Indexes
 from karmalegoweb.src.Visualization.Tali import Read_KL_Output_File
@@ -236,6 +237,8 @@ def get_negative_variables(dataset_name):
     print(dataset_path)
     with open(dataset_path, "r") as file:
         content = file.read()
-        return json.dumps(content)
+        content = content[11:]
+        dictionary = ast.literal_eval(content)
+        return json.dumps(dictionary)
         
 
