@@ -1,4 +1,7 @@
+from collections import defaultdict
+import csv
 import os, uuid, shutil, zipfile
+import sys
 
 from werkzeug.utils import secure_filename
 from flask import current_app, g
@@ -167,8 +170,9 @@ def upload_new_dataset(
     isSuccess, error = __validate_new_dataset(rawDataUuid, vmapUuid, entitiesUuid)
     if not isSuccess:
         return isSuccess, error
-
+    
     __create_directory_for_dataset(dataset_name)
+    __convert_input_format(rawDataUuid, dataset_name)
     try:
         __move_files(dataset_name, rawDataUuid, vmapUuid, entitiesUuid)
         __save_metadata(
@@ -252,3 +256,11 @@ def import_dataset(dataset_name, description, dataset_source, public_private, ca
         raise e
 
     return True, "Dataset imported successfully"
+
+
+def __convert_input_format(rawDataUuid, dataset_name):
+    raw_data_path = os.path.join(current_app.config["TEMP_PATH"], rawDataUuid)
+    dir_path = __get_dataset_dir_path(dataset_name)
+    print(raw_data.convert_to_negative(raw_data_path, dir_path))
+
+
