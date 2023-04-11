@@ -29,6 +29,10 @@ bp = Blueprint("data_mining", __name__, "/")
         "max Tirp Length",
         "index_same",
         "negative_mining",
+        "maximum_negatives",
+		"ofo",
+		"as",
+		"bc",
     ]
 )
 def add_tim():
@@ -67,6 +71,10 @@ def add_tim():
     max_tirp_length = int(data["max Tirp Length"])
     index_same = str(data["index_same"])
     negative_mining = str(data["negative_mining"])
+    maximum_negatives = str(data["maximum_negatives"]),
+    ofo = str(data["ofo"]),
+    as1 = str(data["as"]),
+    bc = str(data["bc"]),
     class_name = str(data["class_name"])
     second_class_name = str(data["second_class_name"])
     timestamp = str(data["timestamp"])
@@ -74,161 +82,162 @@ def add_tim():
     to_visualize = data["to_visualize"]
 
     if negative_mining == "true":
-        print("GOT TRUE")
+        
+        return jsonify({"message": "check passed!"}), 200
+
     if negative_mining == "false":
-        print("GOT false")
-    if index_same == "true":
-        index_same = True
-    else:
-        index_same = False
-    disc = models.discretization.query.filter_by(id=discretization_id).first()
-    email = g.user.Email
-    # checking if the current discretization already exists
-    if check_exists(
-        disc, epsilon, max_gap, vertical_support, num_relations, index_same, max_tirp_length
-    ):
-        return (
-            jsonify(
-                {
-                    "message": "Time interval mining file for this dataset with the same parameters already exist"
-                }
-            ),
-            409,
+        if index_same == "true":
+            index_same = True
+        else:
+            index_same = False
+        disc = models.discretization.query.filter_by(id=discretization_id).first()
+        email = g.user.Email
+        # checking if the current discretization already exists
+        if check_exists(
+            disc, epsilon, max_gap, vertical_support, num_relations, index_same, max_tirp_length
+        ):
+            return (
+                jsonify(
+                    {
+                        "message": "Time interval mining file for this dataset with the same parameters already exist"
+                    }
+                ),
+                409,
+            )
+        dataset_name = get_dataset_name(disc)
+        # dataset_name ='Gradient'
+        KL_id = str(uuid.uuid4())
+        create_directory(dataset_name, discretization_id, KL_id)
+        directory_path = dataset_name + "\\" + discretization_id
+        # saves the data to the dataset
+        KL = models.karma_lego(
+            discretization=disc,
+            epsilon=epsilon,
+            id=KL_id,
+            index_same=index_same,
+            max_gap=max_gap,
+            max_tirp_length=max_tirp_length,
+            min_ver_support=vertical_support,
+            num_relations=num_relations,
         )
-    dataset_name = get_dataset_name(disc)
-    # dataset_name ='Gradient'
-    KL_id = str(uuid.uuid4())
-    create_directory(dataset_name, discretization_id, KL_id)
-    directory_path = dataset_name + "\\" + discretization_id
-    # saves the data to the dataset
-    KL = models.karma_lego(
-        discretization=disc,
-        epsilon=epsilon,
-        id=KL_id,
-        index_same=index_same,
-        max_gap=max_gap,
-        max_tirp_length=max_tirp_length,
-        min_ver_support=vertical_support,
-        num_relations=num_relations,
-    )
-    status = models.karmalego_status(karmalego_id=KL_id)
-    db = get_db()
-    db.session.add(KL)
-    db.session.add(status)
-    db.session.commit()
+        status = models.karmalego_status(karmalego_id=KL_id)
+        db = get_db()
+        db.session.add(KL)
+        db.session.add(status)
+        db.session.commit()
 
-    # after creating the directory, creating by karma lego 3 files: kl, kl0, kl1
-    try:
-        for filename in os.listdir(current_app.config["DATASETS_ROOT"] + "\\" + directory_path):
-            if filename.endswith(".txt"):
-                path = current_app.config["DATASETS_ROOT"] + "\\" + directory_path + "\\" + filename
+        # after creating the directory, creating by karma lego 3 files: kl, kl0, kl1
+        try:
+            for filename in os.listdir(current_app.config["DATASETS_ROOT"] + "\\" + directory_path):
+                if filename.endswith(".txt"):
+                    path = current_app.config["DATASETS_ROOT"] + "\\" + directory_path + "\\" + filename
 
-                out_path = (
+                    out_path = (
+                        current_app.config["DATASETS_ROOT"]
+                        + "\\"
+                        + directory_path
+                        + "\\"
+                        + KL_id
+                        + "\\"
+                        + filename[:-4]  # Removes the .txt
+                    )
+
+                    os.mkdir(out_path)
+
+                    # calling the actual karma lego algorithm
+                    _lego_0, _karma_0 = RunKarmaLego.runKarmaLego(
+                        time_intervals_path=path,
+                        output_path=out_path,
+                        processes_num=10,
+                        calc_offsets=True,
+                        entity_ids_num=2,
+                        epsilon=epsilon,
+                        incremental_output=True,
+                        index_same=index_same,
+                        label=0,
+                        max_gap=max_gap,
+                        max_tirp_length=max_tirp_length,
+                        min_ver_support=vertical_support,
+                        need_one_sized=True,
+                        num_comma=2,
+                        num_relations=num_relations,
+                        print_params=True,
+                        semicolon_end=True,
+                        skip_followers=False,
+                    )
+                else:
+                    continue
+        except Exception as e:
+            current_app.log_exception(e)
+            status.finished = True
+            status.success = False
+            db.session.commit()
+
+            tasks.send_email(message=f"Subject: problem with creating karmalego", receiver_email=email)
+
+            return jsonify({"message": "A problem as occurred with karmalego"}), 500
+        # checks if the creation of the file of the karma lego was successful and if not it deletes the record from the db
+        if (
+            (
+                os.path.exists(
                     current_app.config["DATASETS_ROOT"]
-                    + "\\"
+                    + "/"
                     + directory_path
-                    + "\\"
+                    + "/"
                     + KL_id
-                    + "\\"
-                    + filename[:-4]  # Removes the .txt
+                    + "/"
+                    + "KL"
                 )
-
-                os.mkdir(out_path)
-
-                # calling the actual karma lego algorithm
-                _lego_0, _karma_0 = RunKarmaLego.runKarmaLego(
-                    time_intervals_path=path,
-                    output_path=out_path,
-                    processes_num=10,
-                    calc_offsets=True,
-                    entity_ids_num=2,
-                    epsilon=epsilon,
-                    incremental_output=True,
-                    index_same=index_same,
-                    label=0,
-                    max_gap=max_gap,
-                    max_tirp_length=max_tirp_length,
-                    min_ver_support=vertical_support,
-                    need_one_sized=True,
-                    num_comma=2,
-                    num_relations=num_relations,
-                    print_params=True,
-                    semicolon_end=True,
-                    skip_followers=False,
+            )
+            or (
+                os.path.exists(
+                    current_app.config["DATASETS_ROOT"]
+                    + "/"
+                    + directory_path
+                    + "/"
+                    + KL_id
+                    + "/"
+                    + "KL-class-0.0"
                 )
-            else:
-                continue
-    except Exception as e:
-        current_app.log_exception(e)
-        status.finished = True
-        status.success = False
-        db.session.commit()
-
-        tasks.send_email(message=f"Subject: problem with creating karmalego", receiver_email=email)
-
-        return jsonify({"message": "A problem as occurred with karmalego"}), 500
-    # checks if the creation of the file of the karma lego was successful and if not it deletes the record from the db
-    if (
-        (
-            os.path.exists(
-                current_app.config["DATASETS_ROOT"]
-                + "/"
-                + directory_path
-                + "/"
-                + KL_id
-                + "/"
-                + "KL"
             )
-        )
-        or (
-            os.path.exists(
-                current_app.config["DATASETS_ROOT"]
-                + "/"
-                + directory_path
-                + "/"
-                + KL_id
-                + "/"
-                + "KL-class-0.0"
-            )
-        )
-        or (
-            os.path.exists(
-                current_app.config["DATASETS_ROOT"]
-                + "/"
-                + directory_path
-                + "/"
-                + KL_id
-                + "/"
-                + "KL-class-1.0"
-            )
-        )
-    ):
-        status.finished = True
-        status.success = True
-        db.session.commit()
-        tasks.send_email(message=f"Subject: karmalego successfully created", receiver_email=email)
-        if to_visualize == "true":
-            print("finished KL, starting Guy's preprocess")
-            # call Guy's and Tali's preprocessing
-            process = preprocessing(KL_id)
-            result, _vis_id = process.start()
-            if result != preprocessins_results.GOOD:
-                tasks.send_email(
-                    message=f"Subject: problem with preprocessing", receiver_email=email
+            or (
+                os.path.exists(
+                    current_app.config["DATASETS_ROOT"]
+                    + "/"
+                    + directory_path
+                    + "/"
+                    + KL_id
+                    + "/"
+                    + "KL-class-1.0"
                 )
-                return jsonify({"message": "A problem as occurred with preprocessing"}), 500
+            )
+        ):
+            status.finished = True
+            status.success = True
+            db.session.commit()
+            tasks.send_email(message=f"Subject: karmalego successfully created", receiver_email=email)
+            if to_visualize == "true":
+                print("finished KL, starting Guy's preprocess")
+                # call Guy's and Tali's preprocessing
+                process = preprocessing(KL_id)
+                result, _vis_id = process.start()
+                if result != preprocessins_results.GOOD:
+                    tasks.send_email(
+                        message=f"Subject: problem with preprocessing", receiver_email=email
+                    )
+                    return jsonify({"message": "A problem as occurred with preprocessing"}), 500
 
-            print("finished Guy's and Tali's preprocess")
+                print("finished Guy's and Tali's preprocess")
 
-        return jsonify({"message": "karmalego created!", "KL_id": KL_id}), 200
-    else:
-        status.finished = True
-        status.success = False
-        db.session.commit()
+            return jsonify({"message": "karmalego created!", "KL_id": KL_id}), 200
+        else:
+            status.finished = True
+            status.success = False
+            db.session.commit()
 
-        tasks.send_email(message=f"Subject: problem with creating karmalego", receiver_email=email)
+            tasks.send_email(message=f"Subject: problem with creating karmalego", receiver_email=email)
 
-        return jsonify({"message": "A problem as occurred with karmalego"}), 500
+            return jsonify({"message": "A problem as occurred with karmalego"}), 500
 
 
 @bp.route("/deleteKarmaLego", methods=["POST"])
