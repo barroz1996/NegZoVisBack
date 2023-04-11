@@ -28,6 +28,7 @@ bp = Blueprint("data_mining", __name__, "/")
         "num_relations",
         "max Tirp Length",
         "index_same",
+        "negative_mining",
     ]
 )
 def add_tim():
@@ -65,12 +66,17 @@ def add_tim():
     num_relations = int(data["num_relations"])
     max_tirp_length = int(data["max Tirp Length"])
     index_same = str(data["index_same"])
+    negative_mining = str(data["negative_mining"])
     class_name = str(data["class_name"])
     second_class_name = str(data["second_class_name"])
     timestamp = str(data["timestamp"])
     comments = str(data["comments"])
     to_visualize = data["to_visualize"]
 
+    if negative_mining == "true":
+        print("GOT TRUE")
+    if negative_mining == "false":
+        print("GOT false")
     if index_same == "true":
         index_same = True
     else:

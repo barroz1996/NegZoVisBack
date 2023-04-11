@@ -172,7 +172,6 @@ def upload_new_dataset(
         return isSuccess, error
     
     __create_directory_for_dataset(dataset_name)
-    __convert_input_format(rawDataUuid, dataset_name)
     try:
         __move_files(dataset_name, rawDataUuid, vmapUuid, entitiesUuid)
         __save_metadata(

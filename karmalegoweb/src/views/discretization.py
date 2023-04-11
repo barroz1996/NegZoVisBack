@@ -1,3 +1,5 @@
+from collections import defaultdict
+import csv
 import os, shutil
 
 from flask import current_app, Blueprint, request, jsonify, send_file, g
@@ -309,3 +311,4 @@ def delete_descritization():
     db.session.delete(descritization_status)
     db.session.commit()
     return "Deleted discretization successfully"
+
