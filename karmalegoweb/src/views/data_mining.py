@@ -87,7 +87,7 @@ def add_tim():
         disc = models.discretization.query.filter_by(id=discretization_id).first()
         email = g.user.Email
         dataset_name = get_dataset_name(disc)
-        command = __create_negative_mining_command(vertical_support, max_gap, maximum_negatives, ofo, as1, bc, dataset_name)
+        command = __create_negative_mining_command(vertical_support, max_gap, maximum_negatives, ofo, as1, bc, dataset_name, discretization_id)
         run_algo = run_cpp_program(command)
         if run_algo == 0:
             return jsonify({"message": "check passed!"}), 200
@@ -389,14 +389,16 @@ def create_directory(dataset_name, discretization_id, kl_id):
     return path
 
 
-def __create_negative_mining_command(vertical_support, max_gap, maximum_negatives, ofo, as1, bc, name):
+def __create_negative_mining_command(vertical_support, max_gap, maximum_negatives, ofo, as1, bc, name, discretization_id):
     path = (
         current_app.config["DATASETS_ROOT"]
-        + "/"
+        + "\\"
         + name
+        + "\\" 
+        + discretization_id
     )
 
-    command_parts = ["./NegativeRanges", "-i", path + "/negative.ascii" , "-o", path + "/Noutput.json" , "-ms", str(vertical_support), "-mg", str(max_gap), "-mn", str(maximum_negatives)]
+    command_parts = ["./NegativeRanges", "-i", path + "\\negative.ascii" , "-o", path + "\\Noutput.json" , "-ms", str(vertical_support), "-mg", str(max_gap), "-mn", str(maximum_negatives)]
     
     options = [("ofo", ofo), ("as", as1), ("bc", bc)]
     command_parts += [f"-{option}" for option, value in options if value == "true"]
