@@ -90,6 +90,7 @@ def add_tim():
         command = __create_negative_mining_command(vertical_support, max_gap, maximum_negatives, ofo, as1, bc, dataset_name, discretization_id)
         run_algo = run_cpp_program(command)
         if run_algo == 0:
+            _fix_outputfile(dataset_name, discretization_id)
             return jsonify({"message": "check passed!"}), 200
         if run_algo == 1:
             return jsonify({"message": "A problem as occurred with karmalego"}), 500
@@ -404,4 +405,27 @@ def __create_negative_mining_command(vertical_support, max_gap, maximum_negative
     command_parts += [f"-{option}" for option, value in options if value == "true"]
 
     return " ".join(command_parts)
+
+def _fix_outputfile(name, discretization_id):
+    path = (
+        current_app.config["DATASETS_ROOT"]
+        + "\\"
+        + name
+        + "\\" 
+        + discretization_id 
+        + "\\Noutput.json"
+    )
+
+    with open(path, 'r') as file:
+        lines = file.readlines()
+
+    with open(path, 'w') as file:
+        file.write('[')
+        for i, line in enumerate(lines):
+            if i == len(lines) - 1:
+                file.write(line.rstrip('\n'))
+            else:
+                file.write(line.rstrip('\n') + ',\n')
+        file.write(']')
+
      
