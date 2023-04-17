@@ -2,6 +2,7 @@ import uuid
 import os, shutil
 
 from flask import current_app, g, Blueprint, request, jsonify, send_file
+from karmalegoweb.src.negative_mining.negativeConnector import run_cpp_program
 
 from karmalegoweb.src.preprocessing.results import preprocessins_results
 from karmalegoweb.src.preprocessing.preproccessing import preprocessing
@@ -50,6 +51,7 @@ def add_tim():
     """
     # makes all the validations e making any write to the database
     data = request.form
+
     # if check_if_not_int_but_0(data['Epsilon']):
     #     return jsonify({'message': 'you did not give me an integer but a float'}), 404
     # if check_if_not_int(data['max Tirp Length']) or check_if_not_int(
@@ -71,10 +73,10 @@ def add_tim():
     max_tirp_length = int(data["max Tirp Length"])
     index_same = str(data["index_same"])
     negative_mining = str(data["negative_mining"])
-    maximum_negatives = str(data["maximum_negatives"]),
-    ofo = str(data["ofo"]),
-    as1 = str(data["as"]),
-    bc = str(data["bc"]),
+    maximum_negatives = int(data["maximum_negatives"]) 
+    ofo = str(data["ofo"])
+    as1 = str(data["as"])
+    bc = str(data["bc"])
     class_name = str(data["class_name"])
     second_class_name = str(data["second_class_name"])
     timestamp = str(data["timestamp"])
@@ -82,8 +84,15 @@ def add_tim():
     to_visualize = data["to_visualize"]
 
     if negative_mining == "true":
-        
-        return jsonify({"message": "check passed!"}), 200
+        disc = models.discretization.query.filter_by(id=discretization_id).first()
+        email = g.user.Email
+        dataset_name = get_dataset_name(disc)
+        command = __create_negative_mining_command(vertical_support, max_gap, maximum_negatives, ofo, as1, bc, dataset_name)
+        run_algo = run_cpp_program(command)
+        if run_algo == 0:
+            return jsonify({"message": "check passed!"}), 200
+        if run_algo == 1:
+            return jsonify({"message": "A problem as occurred with karmalego"}), 500
 
     if negative_mining == "false":
         if index_same == "true":
@@ -378,3 +387,19 @@ def create_directory(dataset_name, discretization_id, kl_id):
     else:
         current_app.logger.info("Successfully created the directory %s " % path)
     return path
+
+
+def __create_negative_mining_command(vertical_support, max_gap, maximum_negatives, ofo, as1, bc, name):
+    path = (
+        current_app.config["DATASETS_ROOT"]
+        + "/"
+        + name
+    )
+
+    command_parts = ["./NegativeRanges", "-i", path + "/negative.ascii" , "-o", path + "/Noutput.json" , "-ms", str(vertical_support), "-mg", str(max_gap), "-mn", str(maximum_negatives)]
+    
+    options = [("ofo", ofo), ("as", as1), ("bc", bc)]
+    command_parts += [f"-{option}" for option, value in options if value == "true"]
+
+    return " ".join(command_parts)
+     
