@@ -84,15 +84,46 @@ def add_tim():
     to_visualize = data["to_visualize"]
 
     if negative_mining == "true":
+        ofo = (ofo == "true")
+        as1 = (as1 == "true")
+        bc = (bc == "true")
+        
+        models.get_db().create_all()
+        
         disc = models.discretization.query.filter_by(id=discretization_id).first()
         email = g.user.Email
         dataset_name = get_dataset_name(disc)
+        KL_id = str(uuid.uuid4())
+        # saves the data to the database
+        KL = models.negative_karma_lego(
+            discretization=disc.id,
+            id=KL_id,
+            max_gap=max_gap,
+            min_ver_support=vertical_support,
+            maximum_negatives=maximum_negatives,
+            ofo = ofo,
+            a_s = as1,
+            bc=bc
+        )
+        status = models.karmalego_status(karmalego_id=KL_id)
+        db = get_db()
+        db.session.add(KL)
+        db.session.add(status)
+        db.session.commit()
+
+        #run negative sequential mining algo
         command = __create_negative_mining_command(vertical_support, max_gap, maximum_negatives, ofo, as1, bc, dataset_name, discretization_id)
         run_algo = run_cpp_program(command)
         if run_algo == 0:
             _fix_outputfile(dataset_name, discretization_id)
+            status.finished = True
+            status.success = True
+            db.session.commit()
             return jsonify({"message": "check passed!"}), 200
         if run_algo == 1:
+            status.finished = True
+            status.success = False
+            db.session.commit()
             return jsonify({"message": "A problem as occurred with karmalego"}), 500
 
     if negative_mining == "false":
@@ -402,7 +433,7 @@ def __create_negative_mining_command(vertical_support, max_gap, maximum_negative
     command_parts = ["./NegativeRanges", "-i", path + "\\negative.ascii" , "-o", path + "\\Noutput.json" , "-ms", str(vertical_support), "-mg", str(max_gap), "-mn", str(maximum_negatives)]
     
     options = [("ofo", ofo), ("as", as1), ("bc", bc)]
-    command_parts += [f"-{option}" for option, value in options if value == "true"]
+    command_parts += [f"-{option}" for option, value in options if value == True]
 
     return " ".join(command_parts)
 
