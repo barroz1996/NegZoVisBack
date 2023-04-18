@@ -103,8 +103,12 @@ def get_data_on_dataset():
     disc_to_return = list(map(model_to_discretization, discretizations))
 
     karma_arr = []
+    negative_arr = []
     for curr_disc in discretizations:
         karma_arr.extend(models.karma_lego.query.filter_by(discretization=curr_disc).all())
+
+    for curr_disc in discretizations:
+        negative_arr.extend(models.negative_karma_lego.query.filter_by(discretization=curr_disc.id).all())
 
     def model_to_TIM(model):
         status = models.karmalego_status.query.filter_by(karmalego_id=model.id).first()
@@ -123,10 +127,26 @@ def get_data_on_dataset():
             "VerticalSupport": str(model.min_ver_support),
             "status": {"finished": status.finished, "success": status.success},
         }
+    
+    def negative_to_TIM(model):
+        status = models.karmalego_status.query.filter_by(karmalego_id=model.id).first()
+        return {
+            "discId": model.discretization,
+            "karma_id": str(model.id),
+            "MaxGap": str(model.max_gap),
+            "VerticalSupport": str(model.min_ver_support),
+            "MaximumNegatives": str(model.maximum_negatives),
+            "ofo": str(model.ofo),
+            "as": str(model.a_s),
+            "bc": str(model.bc),
+            "status": {"finished": status.finished, "success": status.success},
+        }
 
     karma_to_return = list(map(model_to_TIM, karma_arr))
 
-    return jsonify({"disc": disc_to_return, "karma": karma_to_return})
+    negatives_to_return = list(map(negative_to_TIM, negative_arr))
+
+    return jsonify({"disc": disc_to_return, "karma": karma_to_return, "negative": negatives_to_return})
 
 
 @bp.route("/incrementViews", methods=["POST"])
