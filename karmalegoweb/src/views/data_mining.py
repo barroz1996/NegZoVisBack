@@ -112,10 +112,10 @@ def add_tim():
         db.session.commit()
 
         #run negative sequential mining algo
-        command = __create_negative_mining_command(vertical_support, max_gap, maximum_negatives, ofo, as1, bc, dataset_name, discretization_id)
+        output_name, command = __create_negative_mining_command(vertical_support, max_gap, maximum_negatives, ofo, as1, bc, dataset_name, discretization_id)
         run_algo = run_cpp_program(command)
         if run_algo == 0:
-            _fix_outputfile(dataset_name, discretization_id)
+            _fix_outputfile(dataset_name, output_name, discretization_id)
             status.finished = True
             status.success = True
             db.session.commit()
@@ -430,21 +430,26 @@ def __create_negative_mining_command(vertical_support, max_gap, maximum_negative
         + discretization_id
     )
 
-    command_parts = ["./NegativeRanges", "-i", path + "\\negative.ascii" , "-o", path + "\\Noutput.json" , "-ms", str(vertical_support), "-mg", str(max_gap), "-mn", str(maximum_negatives)]
-    
+    output_name = [str(vertical_support), str(max_gap), str(maximum_negatives)]
     options = [("ofo", ofo), ("as", as1), ("bc", bc)]
+    output_name += [f"{option}" for option, value in options if value == True]
+    output_name = "_".join(output_name).replace(".", "_")
+
+    command_parts = ["./NegativeRanges", "-i", path + "\\negative.ascii" , "-o", path + "\\negative_" + output_name +".json" , "-ms", str(vertical_support), "-mg", str(max_gap), "-mn", str(maximum_negatives)]
     command_parts += [f"-{option}" for option, value in options if value == True]
 
-    return " ".join(command_parts)
+    return output_name, " ".join(command_parts)
 
-def _fix_outputfile(name, discretization_id):
+def _fix_outputfile(name, output_name, discretization_id):
     path = (
         current_app.config["DATASETS_ROOT"]
         + "\\"
         + name
         + "\\" 
         + discretization_id 
-        + "\\Noutput.json"
+        + "\\negative_" 
+        + output_name 
+        +".json"
     )
 
     with open(path, 'r') as file:
