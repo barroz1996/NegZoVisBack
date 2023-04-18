@@ -108,7 +108,7 @@ def get_data_on_dataset():
         karma_arr.extend(models.karma_lego.query.filter_by(discretization=curr_disc).all())
 
     for curr_disc in discretizations:
-        negative_arr.extend(models.negative_karma_lego.query.filter_by(discretization=curr_disc.id).all())
+        negative_arr.extend(models.negative_karma_lego.query.filter_by(discretization=curr_disc).all())
 
     def model_to_TIM(model):
         status = models.karmalego_status.query.filter_by(karmalego_id=model.id).first()
@@ -131,7 +131,11 @@ def get_data_on_dataset():
     def negative_to_TIM(model):
         status = models.karmalego_status.query.filter_by(karmalego_id=model.id).first()
         return {
-            "discId": model.discretization,
+            "discId": model.discretization.id,
+            "BinsNumber": str(model.discretization.NumStates),
+            "InterpolationGap": str(model.discretization.InterpolationGap),
+            "MethodOfDiscretization": str(model.discretization.AbMethod),
+            "PAAWindowSize": str(model.discretization.PAA),
             "karma_id": str(model.id),
             "MaxGap": str(model.max_gap),
             "VerticalSupport": str(model.min_ver_support),

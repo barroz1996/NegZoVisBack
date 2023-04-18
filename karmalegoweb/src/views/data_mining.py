@@ -96,7 +96,7 @@ def add_tim():
         KL_id = str(uuid.uuid4())
         # saves the data to the database
         KL = models.negative_karma_lego(
-            discretization=disc.id,
+            discretization=disc,
             id=KL_id,
             max_gap=max_gap,
             min_ver_support=vertical_support,

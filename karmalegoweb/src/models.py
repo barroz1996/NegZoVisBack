@@ -113,6 +113,7 @@ class discretization(db.Model):
     GradientFile_name = db.Column(db.String(120))
     GradientWindowSize = db.Column(db.Integer)
     karma_lego = db.relationship("karma_lego", backref="discretization", lazy="subquery")
+    negative_karma_lego = db.relationship("negative_karma_lego", backref="discretization", lazy="subquery")
     dataset_Name = db.Column(
         db.String(150), db.ForeignKey("info_about_datasets.Name"), nullable=False
     )
@@ -177,6 +178,6 @@ class negative_karma_lego(db.Model):
     ofo = db.Column(db.Boolean, nullable=False)
     a_s = db.Column(db.Boolean, nullable=False)
     bc = db.Column(db.Boolean, nullable=False)
-    discretization = db.Column(
+    discretization_name = db.Column(
         db.String(150), db.ForeignKey("discretization.id"), nullable=False
     )
