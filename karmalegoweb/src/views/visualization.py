@@ -101,37 +101,56 @@ def initiate_tirps():
     visualization = models.Visualization.query.filter_by(id=request.form["visualization"]).first()
     if visualization is None:
         return "Could not found requested visualization", 400
+    
+    negative =  models.negative_karma_lego.query.filter_by(id=visualization.KL_id).first()
+    if negative is not None:
+        root_path = os.path.join(
+            current_app.config["DATASETS_ROOT"],
+            visualization.dataset,
+            negative.discretization_name,
+            "negative_0_7_4_1_ofo.json"
+        )
 
-    root_path = os.path.join(
-        current_app.config["DATASETS_ROOT"],
-        visualization.dataset,
-        "visualizations",
-        visualization.id,
-        "chunks",
-        "root.json",
-    )
+        root = []
+        with open(root_path, "r") as fr:
+            lines = json.load(fr)
+            for line in lines:
+                root.append(line)
 
-    if not os.path.exists(root_path):
-        return "Visualization found but could not find the root file", 500
+        response = make_response(jsonify({"NegativeData": root}))
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        return response
+    else:
+        root_path = os.path.join(
+            current_app.config["DATASETS_ROOT"],
+            visualization.dataset,
+            "visualizations",
+            visualization.id,
+            "chunks",
+            "root.json",
+        )
 
-    visualization_path = os.path.join(
-        current_app.config["DATASETS_ROOT"],
-        visualization.dataset,
-        "visualizations",
-        visualization.id,
-    )
-    states, _ = ParseOutputFile.parse_states_file(visualization_path)
-    root = []
-    with open(root_path, "r") as fr:
-        lines = json.load(fr)
-        for line in lines:
-            tirp_ob = tirp(None, None, None)
-            tirp_ob.from_json(line)
-            root.append(tirp_ob.to_old_tirp(states).__dict__)
+        if not os.path.exists(root_path):
+            return "Visualization found but could not find the root file", 500
 
-    response = make_response(jsonify({"Root": root}))
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    return response
+        visualization_path = os.path.join(
+            current_app.config["DATASETS_ROOT"],
+            visualization.dataset,
+            "visualizations",
+            visualization.id,
+        )
+        states, _ = ParseOutputFile.parse_states_file(visualization_path)
+        root = []
+        with open(root_path, "r") as fr:
+            lines = json.load(fr)
+            for line in lines:
+                tirp_ob = tirp(None, None, None)
+                tirp_ob.from_json(line)
+                root.append(tirp_ob.to_old_tirp(states).__dict__)
+
+        response = make_response(jsonify({"Root": root}))
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        return response
 
 
 @bp.route("/getSubTree", methods=["POST"])

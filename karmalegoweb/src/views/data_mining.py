@@ -3,6 +3,7 @@ import os, shutil
 
 from flask import current_app, g, Blueprint, request, jsonify, send_file
 from karmalegoweb.src.negative_mining.negativeConnector import run_cpp_program
+from karmalegoweb.src.preprocessing.negative_proccessing import negative_preprocessing
 
 from karmalegoweb.src.preprocessing.results import preprocessins_results
 from karmalegoweb.src.preprocessing.preproccessing import preprocessing
@@ -94,6 +95,10 @@ def add_tim():
         email = g.user.Email
         dataset_name = get_dataset_name(disc)
         KL_id = str(uuid.uuid4())
+        create_directory(dataset_name, discretization_id, KL_id)
+        directory_path = dataset_name + "\\" + discretization_id
+
+        print("directory_path" + directory_path)
         # saves the data to the database
         KL = models.negative_karma_lego(
             discretization=disc,
@@ -112,19 +117,39 @@ def add_tim():
         db.session.commit()
 
         #run negative sequential mining algo
-        output_name, command = __create_negative_mining_command(vertical_support, max_gap, maximum_negatives, ofo, as1, bc, dataset_name, discretization_id)
+        output_name, command = __create_negative_mining_command(vertical_support, max_gap, maximum_negatives, ofo, as1, bc, dataset_name, discretization_id, directory_path)
+        print("test1")
         run_algo = run_cpp_program(command)
+        print(run_algo)
+        print("test2")
         if run_algo == 0:
-            _fix_outputfile(dataset_name, output_name, discretization_id)
+            _fix_outputfile(dataset_name, output_name, discretization_id, directory_path)
+            print("test3")
             status.finished = True
             status.success = True
             db.session.commit()
-            return jsonify({"message": "check passed!"}), 200
+            print("test4")
         if run_algo == 1:
             status.finished = True
             status.success = False
             db.session.commit()
             return jsonify({"message": "A problem as occurred with karmalego"}), 500
+        
+        if to_visualize == "true":
+                print("finished KL, starting Guy's preprocess")
+                # call Guy's and Tali's preprocessing
+                process = negative_preprocessing(KL_id)
+                result, _vis_id = process.start_negative()
+                if result != preprocessins_results.GOOD:
+                    tasks.send_email(
+                        message=f"Subject: problem with preprocessing", receiver_email=email
+                    )
+                    return jsonify({"message": "A problem as occurred with preprocessing"}), 500
+
+                print("finished Guy's and Tali's preprocess")
+
+        return jsonify({"message": "karmalego created!", "KL_id": KL_id}), 200
+
 
     if negative_mining == "false":
         if index_same == "true":
@@ -421,7 +446,7 @@ def create_directory(dataset_name, discretization_id, kl_id):
     return path
 
 
-def __create_negative_mining_command(vertical_support, max_gap, maximum_negatives, ofo, as1, bc, name, discretization_id):
+def __create_negative_mining_command(vertical_support, max_gap, maximum_negatives, ofo, as1, bc, name, discretization_id, directory_path):
     path = (
         current_app.config["DATASETS_ROOT"]
         + "\\"
@@ -440,7 +465,7 @@ def __create_negative_mining_command(vertical_support, max_gap, maximum_negative
 
     return output_name, " ".join(command_parts)
 
-def _fix_outputfile(name, output_name, discretization_id):
+def _fix_outputfile(name, output_name, discretization_id, directory_path):
     path = (
         current_app.config["DATASETS_ROOT"]
         + "\\"
@@ -451,6 +476,8 @@ def _fix_outputfile(name, output_name, discretization_id):
         + output_name 
         +".json"
     )
+
+    print(path)
 
     with open(path, 'r') as file:
         lines = file.readlines()

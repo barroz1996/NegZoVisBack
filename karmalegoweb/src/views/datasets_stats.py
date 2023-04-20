@@ -370,24 +370,44 @@ def get_visualization_details():
     if visualization.KL_id is None:
         return "There is no visualization details on an imported dataset", 400
     karmalego = models.karma_lego.query.filter_by(id=visualization.KL_id).first()
-    discretization = models.discretization.query.filter_by(id=karmalego.discretization_name).first()
+    if karmalego is not None:
+        discretization = models.discretization.query.filter_by(id=karmalego.discretization_name).first()
 
-    karmalego_details = {
-        "min_ver_support": karmalego.min_ver_support,
-        "num_relations": karmalego.num_relations,
-        "max_gap": karmalego.max_gap,
-        "max_tirp_length": karmalego.max_tirp_length,
-        "index_same": karmalego.index_same,
-        "epsilon": karmalego.epsilon,
-    }
-    discretization_details = {
-        "paa": discretization.PAA,
-        "method": discretization.AbMethod,
-        "number_of_bins": discretization.NumStates,
-        "interpolation_gap": discretization.InterpolationGap,
-    }
+        karmalego_details = {
+            "min_ver_support": karmalego.min_ver_support,
+            "num_relations": karmalego.num_relations,
+            "max_gap": karmalego.max_gap,
+            "max_tirp_length": karmalego.max_tirp_length,
+            "index_same": karmalego.index_same,
+            "epsilon": karmalego.epsilon,
+        }
+        discretization_details = {
+            "paa": discretization.PAA,
+            "method": discretization.AbMethod,
+            "number_of_bins": discretization.NumStates,
+            "interpolation_gap": discretization.InterpolationGap,
+        }
 
-    return jsonify({"karmalego": karmalego_details, "discretization": discretization_details})
+        return jsonify({"karmalego": karmalego_details, "discretization": discretization_details})
+    
+    else:
+        karmalego = models.negative_karma_lego.query.filter_by(id=visualization.KL_id).first()
+        discretization = models.discretization.query.filter_by(id=karmalego.discretization_name).first()
+
+        karmalego_details = {
+            "min_ver_support": karmalego.min_ver_support,
+            "max_gap": karmalego.max_gap,
+            "maximun_negatives" : karmalego.maximum_negatives,
+        }
+        discretization_details = {
+            "paa": discretization.PAA,
+            "method": discretization.AbMethod,
+            "number_of_bins": discretization.NumStates,
+            "interpolation_gap": discretization.InterpolationGap,
+        }
+
+        return jsonify({"karmalego": karmalego_details, "discretization": discretization_details})
+
 
 
 def check_for_authorization(current_user, dataset_name):
