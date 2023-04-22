@@ -1,3 +1,5 @@
+import ast
+import csv
 import os, json, shutil
 
 from flask import Blueprint, request, jsonify, make_response, current_app
@@ -69,6 +71,38 @@ def get_entities():
         else:
             entities = []
     return jsonify({"Entities": entities})
+
+
+@bp.route("/getEntitiesFileFromVisualization", methods=["POST"])
+@login_required
+def get_entities_file_from_visualization():
+    """
+    :return:
+    404 (NOT FOUND) if:
+    # The entity file cannot be found.
+
+    200 (OK) if the file exists, Returns an entity file with the requested dataset id
+    """
+    visualization = models.Visualization.query.filter_by(id=request.form["visualization"]).first()
+    if visualization is None:
+        return "Could not found requested visualization", 400
+    dataset_name = visualization.dataset
+    if os.path.exists(os.path.join(current_app.config["DATASETS_ROOT"], dataset_name)):
+        try:
+            entities_path = os.path.join(current_app.config["DATASETS_ROOT"], dataset_name ,"VMap.csv")
+            with open(entities_path, "r") as fs:
+                reader = csv.reader(fs)
+                next(reader) 
+                data_dict = {}
+                for row in reader:
+                    key = row[0]
+                    value = row[1]
+                    data_dict[key] = value
+                return jsonify(data_dict)
+        except FileNotFoundError:
+            return jsonify({"message": "the current dataset file has no entities file."}), 206
+    else:
+        return jsonify({"message": "the request Entities file cannot be found."}), 404
 
 
 @bp.route("/getStates", methods=["POST"])

@@ -233,8 +233,6 @@ def get_negative_variables(dataset_name):
     dataset_path = os.path.join(
         current_app.config["DATASETS_ROOT"], directory ,dataset_name
     )
-    print("PATH: ")
-    print(dataset_path)
     with open(dataset_path, "r") as file:
         content = file.read()
         content = content[11:]
