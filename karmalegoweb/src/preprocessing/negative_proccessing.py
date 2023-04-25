@@ -50,6 +50,7 @@ class negative_preprocessing:
         self.karmalego_id = karmalego_id
         self.dataset_name = karmalego_to_dataset_name(karmalego_id)
         self.discretization_id = karmalego_to_discretization(karmalego_id)
+        self.has_entities = has_entities(self.dataset_name)
         self.visualization = None
         self.tim_class0_parsed = None
         self.tim_class1_parsed = None
@@ -106,6 +107,10 @@ class negative_preprocessing:
 
             self.__create_settings_file()
 
+            if self.has_entities:
+                create_entities(self.dataset_name, self.visualization.id)
+                current_app.logger.debug("PREPROCESSING - Created Entities File")
+
             create_states(self.dataset_name, self.discretization_id, self.visualization.id)
 
             current_app.logger.debug("PREPROCESSING - Created States File")
@@ -114,11 +119,8 @@ class negative_preprocessing:
             # call_tali_preprocess(
             #     visualization_id=self.visualization.id, dataset_name=self.dataset_name
             # )
-            print("4")
 
             finish_preproccess_run(self.visualization.id, True)
-
-            print("5")
 
             return preprocessins_results.GOOD, self.visualization.id
 
@@ -148,7 +150,7 @@ class negative_preprocessing:
             self.tim_class0_parsed,
             self.tim_class1_parsed,
             False,
-            False,
+            self.has_entities,
         )
         settings_object.save(self.visualization.id)
         current_app.logger.debug("PREPROCESSING - Created settings file")

@@ -73,9 +73,9 @@ def get_entities():
     return jsonify({"Entities": entities})
 
 
-@bp.route("/getEntitiesFileFromVisualization", methods=["POST"])
+@bp.route("/getVMapFileFromVisualization", methods=["POST"])
 @login_required
-def get_entities_file_from_visualization():
+def get_vmap_file_from_visualization():
     """
     :return:
     404 (NOT FOUND) if:
@@ -89,8 +89,8 @@ def get_entities_file_from_visualization():
     dataset_name = visualization.dataset
     if os.path.exists(os.path.join(current_app.config["DATASETS_ROOT"], dataset_name)):
         try:
-            entities_path = os.path.join(current_app.config["DATASETS_ROOT"], dataset_name ,"VMap.csv")
-            with open(entities_path, "r") as fs:
+            vmap_path = os.path.join(current_app.config["DATASETS_ROOT"], dataset_name ,"VMap.csv")
+            with open(vmap_path, "r") as fs:
                 reader = csv.reader(fs)
                 next(reader) 
                 data_dict = {}
@@ -100,9 +100,9 @@ def get_entities_file_from_visualization():
                     data_dict[key] = value
                 return jsonify(data_dict)
         except FileNotFoundError:
-            return jsonify({"message": "the current dataset file has no entities file."}), 206
+            return jsonify({"message": "the current dataset file has no vmap file."}), 206
     else:
-        return jsonify({"message": "the request Entities file cannot be found."}), 404
+        return jsonify({"message": "the request VMap file cannot be found."}), 404
 
 
 @bp.route("/getStates", methods=["POST"])

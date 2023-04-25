@@ -118,17 +118,12 @@ def add_tim():
 
         #run negative sequential mining algo
         output_name, command = __create_negative_mining_command(vertical_support, max_gap, maximum_negatives, ofo, as1, bc, dataset_name, discretization_id, directory_path)
-        print("test1")
         run_algo = run_cpp_program(command)
-        print(run_algo)
-        print("test2")
         if run_algo == 0:
             _fix_outputfile(dataset_name, output_name, discretization_id, directory_path)
-            print("test3")
             status.finished = True
             status.success = True
             db.session.commit()
-            print("test4")
         if run_algo == 1:
             status.finished = True
             status.success = False
@@ -476,8 +471,6 @@ def _fix_outputfile(name, output_name, discretization_id, directory_path):
         + output_name 
         +".json"
     )
-
-    print(path)
 
     with open(path, 'r') as file:
         lines = file.readlines()
