@@ -142,7 +142,7 @@ def initiate_tirps():
             current_app.config["DATASETS_ROOT"],
             visualization.dataset,
             negative.discretization_name,
-            "negative_0_7_4_1_ofo.json"
+            "negative_output.json"
         )
 
         root = []
