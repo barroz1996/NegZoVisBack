@@ -1,7 +1,8 @@
+import json
 import uuid
 import os, shutil
 
-from flask import current_app, g, Blueprint, request, jsonify, send_file
+from flask import current_app, g, Blueprint, make_response, request, jsonify, send_file
 from karmalegoweb.src.negative_mining.negativeConnector import run_cpp_program
 from karmalegoweb.src.preprocessing.negative_proccessing import negative_preprocessing
 
@@ -389,19 +390,17 @@ def get_negative_tim():
     disc = karma.discretization.id
     dataset = karma.discretization.dataset.Name
 
-    kl_path = os.path.join(current_app.config["DATASETS_ROOT"], dataset, disc)
+    kl_path = os.path.join(current_app.config["DATASETS_ROOT"], dataset, disc, "negative_output.json")
 
-    kl_zip_name = "karma_lego.zip"
+    with open(kl_path, 'r') as f:
+        data = json.load(f)
 
-    files_to_send = []
+    data_str = json.dumps(data)
+    response = make_response(data_str)
+    response.headers['Content-Disposition'] = 'attachment; filename=negative_output.json'
+    response.headers['Content-type'] = 'application/json'
 
-    if os.path.exists(os.path.join(kl_path, "negative_output.json")):
-        files_to_send.append("negative_output.json")
-
-    utils.create_disc_zip(kl_path, kl_zip_name, files_to_send)
-
-    return send_file(os.path.join(kl_path, kl_zip_name))
-
+    return response
 
 def check_exists(
     disc, epsilon, max_gap, vertical_support, num_relations, index_same, max_tirp_length
