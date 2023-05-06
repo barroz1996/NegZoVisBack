@@ -375,6 +375,33 @@ def get_tim():
 
     return send_file(os.path.join(kl_path, kl_zip_name))
 
+@bp.route("/getNegativeTIM", methods=["POST"])
+@login_required
+def get_negative_tim():
+    """
+    This function handles a request to download a zip of all the karma lego files.
+    :return:
+    200 (OK) if all files have been found, sends a zipped folder of all the KarmaLego framework's outputs.
+    """
+    data = request.form
+    kl_id = data["kl_id"]
+    karma = models.negative_karma_lego.query.filter_by(id=kl_id).first()
+    disc = karma.discretization.id
+    dataset = karma.discretization.dataset.Name
+
+    kl_path = os.path.join(current_app.config["DATASETS_ROOT"], dataset, disc)
+
+    kl_zip_name = "karma_lego.zip"
+
+    files_to_send = []
+
+    if os.path.exists(os.path.join(kl_path, "negative_output.json")):
+        files_to_send.append("negative_output.json")
+
+    utils.create_disc_zip(kl_path, kl_zip_name, files_to_send)
+
+    return send_file(os.path.join(kl_path, kl_zip_name))
+
 
 def check_exists(
     disc, epsilon, max_gap, vertical_support, num_relations, index_same, max_tirp_length
