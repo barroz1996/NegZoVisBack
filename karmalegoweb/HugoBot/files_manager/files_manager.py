@@ -282,7 +282,7 @@ def convert_to_negative(raw_data_path):
         reader = csv.reader(file)
         next(reader)
         for row in reader:
-            entID, event, timestamp = row[0], row[3], row[2]
+            entID, event, timestamp = row[0], row[1], row[2]
             unsorted_dict[(entID, timestamp)].append(event)
 
     sorted_dict = dict(sorted(unsorted_dict.items(), key=lambda x: (int(x[0][0]), int(x[0][1]))))

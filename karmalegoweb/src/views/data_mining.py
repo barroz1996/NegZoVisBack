@@ -129,7 +129,7 @@ def add_tim():
             status.finished = True
             status.success = False
             db.session.commit()
-            return jsonify({"message": "A problem as occurred with karmalego"}), 500
+            return jsonify({"message": "A problem as occurred with karmalego, try different parameters"}), 500
         
         if to_visualize == "true":
                 print("finished KL, starting Guy's preprocess")
@@ -390,7 +390,7 @@ def get_negative_tim():
     disc = karma.discretization.id
     dataset = karma.discretization.dataset.Name
 
-    kl_path = os.path.join(current_app.config["DATASETS_ROOT"], dataset, disc, "negative_output.json")
+    kl_path = os.path.join(current_app.config["DATASETS_ROOT"], dataset, disc,kl_id,  "negative_output.json")
 
     with open(kl_path, 'r') as f:
         data = json.load(f)
