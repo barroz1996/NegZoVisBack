@@ -16,13 +16,13 @@ def run_cpp_program(command):
     NegativeRanges =  path + 'NegativeRanges.cpp'
     Sequence = path + 'Sequence.cpp'
     main = path + 'main.cpp'
-    compile = subprocess.run(['g++', NegativeRanges, Sequence, main, '-o', "NegativeRanges"])
+    compile = subprocess.run(['g++', NegativeRanges, Sequence, main, '-o', "NegativeRanges"], shell=True)
 
     # # Run the program
     if compile.returncode == 1:
         return 1
     proc = subprocess.run(command)
-    if proc.returncode == 1:
+    if proc.returncode == 0:
+        return 0
+    else:
         return 1
-    
-    return 0

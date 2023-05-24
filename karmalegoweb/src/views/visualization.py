@@ -142,6 +142,7 @@ def initiate_tirps():
             current_app.config["DATASETS_ROOT"],
             visualization.dataset,
             negative.discretization_name,
+            visualization.KL_id,
             "negative_output.json"
         )
 

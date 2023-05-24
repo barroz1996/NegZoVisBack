@@ -118,10 +118,10 @@ def add_tim():
         db.session.commit()
 
         #run negative sequential mining algo
-        command = __create_negative_mining_command(vertical_support, max_gap, maximum_negatives, ofo, as1, bc, dataset_name, discretization_id, directory_path)
+        command = __create_negative_mining_command(vertical_support, max_gap, maximum_negatives, ofo, as1, bc, dataset_name, discretization_id, KL_id)
         run_algo = run_cpp_program(command)
         if run_algo == 0:
-            _fix_outputfile(dataset_name, discretization_id)
+            _fix_outputfile(dataset_name, discretization_id, KL_id)
             status.finished = True
             status.success = True
             db.session.commit()
@@ -467,7 +467,7 @@ def create_directory(dataset_name, discretization_id, kl_id):
     return path
 
 
-def __create_negative_mining_command(vertical_support, max_gap, maximum_negatives, ofo, as1, bc, name, discretization_id, directory_path):
+def __create_negative_mining_command(vertical_support, max_gap, maximum_negatives, ofo, as1, bc, name, discretization_id, kl_id):
     path = (
         current_app.config["DATASETS_ROOT"]
         + "\\"
@@ -478,18 +478,20 @@ def __create_negative_mining_command(vertical_support, max_gap, maximum_negative
 
     options = [("ofo", ofo), ("as", as1), ("bc", bc)]
 
-    command_parts = ["./NegativeRanges", "-i", path + "\\negative.ascii" , "-o", path + "\\negative_output.json" , "-ms", str(vertical_support), "-mg", str(max_gap), "-mn", str(maximum_negatives)]
+    command_parts = ["./NegativeRanges", "-i", path + "\\negative.ascii" , "-o", path + "\\"+ kl_id + "\\negative_output.json" , "-ms", str(vertical_support), "-mg", str(max_gap), "-mn", str(maximum_negatives)]
     command_parts += [f"-{option}" for option, value in options if value == True]
 
     return " ".join(command_parts)
 
-def _fix_outputfile(name, discretization_id):
+def _fix_outputfile(name, discretization_id, KL_id):
     path = (
         current_app.config["DATASETS_ROOT"]
         + "\\"
         + name
         + "\\" 
         + discretization_id 
+        + "\\"
+        + KL_id
         + "\\negative_output.json" 
     )
 
