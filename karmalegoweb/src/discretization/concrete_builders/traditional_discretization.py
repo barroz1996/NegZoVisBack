@@ -17,6 +17,20 @@ class traditional_discretization(discretization_builder):
                 return scc, err
 
         return True, ":)"
+    
+
+class empty_discretization(discretization_builder):
+    def make(self):
+        os.mkdir(self.disc_path)
+        steps = [
+            lambda: self.save_discretization_in_db(),
+        ]
+        for step in steps:
+            scc, err = step()
+            if not scc:
+                return scc, err
+
+        return True, ":)"
 
 
 class persist(traditional_discretization):
@@ -47,6 +61,11 @@ class sax(traditional_discretization):
     def __init__(self, dataset_name) -> None:
         super().__init__(dataset_name)
         self.abstraction_method = "SAX"
+
+class empty(empty_discretization):
+    def __init__(self, dataset_name) -> None:
+        super().__init__(dataset_name)
+        self.abstraction_method = "Empty"
 
 
 # -------------------------------------- TD4C --------------------------------------

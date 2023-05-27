@@ -51,9 +51,12 @@ def discretization(
         os.system(command)
 
         process_kl_input(disc_path)
-        name_bins(dataset_path, disc_path, request_files_names, is_per_property, binsNames)
+        status = name_bins(dataset_path, disc_path, request_files_names, is_per_property, binsNames)
 
-        success = validate_file_creation(disc_path)
+        if status == 1:
+            success = validate_file_creation(disc_path)
+        if status == 0:
+            success = True
 
     except Exception as e:
         success = False

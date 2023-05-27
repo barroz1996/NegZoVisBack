@@ -19,6 +19,14 @@ def validate(karmalego_id: str):
             return result
     return GOOD
 
+def validate_seq(karmalego_id: str):
+    GOOD = preprocessins_results.GOOD
+    for validation in SEQ_VALIDATIONS:
+        result = validation(karmalego_id)
+        if result != GOOD:
+            return result
+    return GOOD
+
 
 def __input_exists(karmalego_id):
     if not karmalego_data_exists(karmalego_id):
@@ -37,3 +45,4 @@ def __visualization_not_already_exists(karmalego_id):
 
 
 VALIDATIONS = [__input_exists, __visualization_not_already_exists]
+SEQ_VALIDATIONS = [__visualization_not_already_exists]

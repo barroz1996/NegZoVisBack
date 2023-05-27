@@ -152,7 +152,7 @@ def initiate_tirps():
             for line in lines:
                 root.append(line)
 
-        response = make_response(jsonify({"NegativeData": root}))
+        response = make_response(jsonify(root))
         response.headers["Access-Control-Allow-Origin"] = "*"
         return response
     else:

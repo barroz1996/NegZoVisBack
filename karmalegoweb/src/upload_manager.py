@@ -75,6 +75,26 @@ def __save_metadata(dataset_name, description, dataset_source, public_private, c
     db.session.commit()
 
 
+def __save_sequential_metadata(dataset_name, description, dataset_source, public_private, category):
+    dataset = models.info_about_datasets(
+        Name=dataset_name,
+        Description=description,
+        source=dataset_source,
+        public_private=public_private,
+        category=category,
+        size=0,
+        views=0,
+        downloads=0,
+        owner=g.user,
+        # Ravid: what is this?
+        visual_reference="",
+        uploaded=True,
+    )
+    db = get_db()
+    db.session.add(dataset)
+    db.session.commit()
+
+
 def __validate_new_dataset(rawDataUuid, vmapUuid, entitiesUuid):
     raw_data_path = os.path.join(current_app.config["TEMP_PATH"], rawDataUuid)
     if not raw_data.validate_data_header(raw_data_path):
@@ -128,6 +148,23 @@ def __move_files(dataset_name, rawDataUuid, vmapUuid, entitiesUuid):
         dest_path_dir = __get_dataset_dir_path(dataset_name)
         dest_path = os.path.join(dest_path_dir, to_move[file_name] + ".csv")
         shutil.copy(src_path, dest_path)
+
+def __move_sequential_files(dataset_name, rawDataUuid, vmapUuid, entitiesUuid):
+    to_move = {rawDataUuid: dataset_name, vmapUuid: "VMap"}
+    if entitiesUuid:
+        to_move[entitiesUuid] = "Entities"
+
+    for file_name in to_move:
+        if file_name == rawDataUuid:
+            src_path = os.path.join(current_app.config["TEMP_PATH"], file_name)
+            dest_path_dir = __get_dataset_dir_path(dataset_name)
+            dest_path = os.path.join(dest_path_dir, to_move[file_name] + ".ascii")
+            shutil.copy(src_path, dest_path)
+        else:
+            src_path = os.path.join(current_app.config["TEMP_PATH"], file_name)
+            dest_path_dir = __get_dataset_dir_path(dataset_name)
+            dest_path = os.path.join(dest_path_dir, to_move[file_name] + ".csv")
+            shutil.copy(src_path, dest_path)
 
 
 def __validate_file_existence(uuid, file_name):
@@ -187,6 +224,56 @@ def upload_new_dataset(
     # TODO: Add step - Zip files
 
     return True, "Dataset uploaded successfully"
+
+def upload_new_sequential_dataset(
+    dataset_name,
+    description,
+    dataset_source,
+    public_private,
+    category,
+    rawDataUuid,
+    vmapUuid,
+    entitiesUuid,
+) -> tuple:
+    dataset_name = secure_filename(dataset_name)
+    if dataset_name == "":
+        return False, "Invalid dataset name"
+
+    for uuid, file_name in [
+        (rawDataUuid, "raw data"),
+        (vmapUuid, "vmap"),
+        (entitiesUuid, "entities"),
+    ]:
+        if uuid:
+            success, err = __validate_file_existence(uuid, file_name)
+            if not success:
+                return success, err
+
+    exists = models.info_about_datasets.query.filter_by(Name=dataset_name).first()
+    if exists is not None:
+        return False, "Dataset with that name already been created"
+
+    # isSuccess, error = __validate_new_dataset(rawDataUuid, vmapUuid, entitiesUuid)
+    # if not isSuccess:
+    #     return isSuccess, error
+    
+    __create_directory_for_dataset(dataset_name)
+    try:
+        __move_sequential_files(dataset_name, rawDataUuid, vmapUuid, entitiesUuid)
+        __save_sequential_metadata(
+            dataset_name=dataset_name,
+            category=category,
+            dataset_source=dataset_source,
+            description=description,
+            public_private=public_private,
+        )
+    except Exception as e:
+        __delete_directory_for_dataset(dataset_name)
+        raise e
+    # TODO: Add step - Zip files
+
+    return True, "Dataset uploaded successfully"
+
 
 
 def __move_and_unzip(dataset_name, visualization_id, zip_uuid):

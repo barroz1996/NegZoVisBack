@@ -23,6 +23,7 @@ from karmalegoweb.src.discretization.concrete_builders.traditional_discretizatio
     td4c_entropy,
     td4c_entropy_ig,
     td4c_skl,
+    empty
 )
 
 
@@ -130,6 +131,9 @@ def add_new_disc():
         elif abstraction_method == "Abstraction Per Property":
             builder = abstraction_per_property(dataset_name)
             result = builder.make(preprocessing_file, states_file, abstraction_method_file)
+        elif abstraction_method == "Empty":
+            builder = empty(dataset_name)
+            result = builder.make()
 
         if not result[0]:
             return result[1], 400
@@ -145,6 +149,7 @@ def add_new_disc():
             builder.disc_path,
             builder.dataset_path,
         )
+        
         # args = [
         #     list(files.keys()),
         #     abstraction_method == "Abstraction Per Property",

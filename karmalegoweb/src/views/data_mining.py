@@ -1,7 +1,7 @@
 import json
 import uuid
 import os, shutil
-
+from uuid import uuid4
 from flask import current_app, g, Blueprint, make_response, request, jsonify, send_file
 from karmalegoweb.src.negative_mining.negativeConnector import run_cpp_program
 from karmalegoweb.src.preprocessing.negative_proccessing import negative_preprocessing
@@ -507,4 +507,177 @@ def _fix_outputfile(name, discretization_id, KL_id):
                 file.write(line.rstrip('\n') + ',\n')
         file.write(']')
 
-     
+
+@bp.route("/addSequentialTIM", methods=["POST"])
+@login_required
+@validate_args(
+    [
+        "Max Gap",
+        "min_ver_support",
+        "negative_mining",
+        "maximum_negatives",
+		"ofo",
+		"as",
+		"bc",
+    ]
+)
+def add_sequential_tim():
+    """
+    This function handles a new KarmaLego run attempt.
+    :param current_user: The user which is currently logged in.
+    param - epsilon - the value of epsilon, int
+    param - max gap- int, the max_gap between the intervals for creating the index
+    :param min_ver_support: float, the minimum vertical support value
+    :param num_relations: int, number of relations
+    :param index_same: Boolean, index same symbols or not
+    :return:
+    if it was a sussess run it returns status 200
+    if there is already a karma lego like the user wants now it returns status 400
+    """
+    # makes all the validations e making any write to the database
+    data = request.form
+
+    max_gap = int(data["Max Gap"])
+    vertical_support = int(data["min_ver_support"]) / 100
+    negative_mining = str(data["negative_mining"])
+    maximum_negatives = int(data["maximum_negatives"]) 
+    ofo = str(data["ofo"])
+    as1 = str(data["as"])
+    bc = str(data["bc"])
+    to_visualize = data["to_visualize"]
+    datasetName = data["datasetName"]
+
+    ofo = (ofo == "true")
+    as1 = (as1 == "true")
+    bc = (bc == "true")
+    
+    models.get_db().create_all()
+    exist = models.discretization.query.filter_by(dataset_Name=datasetName).first()
+    if exist is None:
+        disc = models.discretization(
+                id=str(uuid4()),
+                dataset=models.info_about_datasets.query.filter_by(Name=datasetName).first(),
+                AbMethod="-",
+                InterpolationGap=None,
+                NumStates=0,
+                PAA=None,
+                GradientWindowSize=0,
+                GradientFile_name=None,
+                KnowledgeBasedFile_name=None,
+            )
+        run = models.discretization_status(discretization_id=disc.id)
+        db = get_db()
+        db.session.add(disc)
+        db.session.add(run)
+        db.session.commit()
+
+    disc = models.discretization.query.filter_by(dataset_Name=datasetName).first()
+    discretization_id = disc.id
+    create_disc_directory(datasetName, discretization_id)
+
+    original_path = (
+        current_app.config["DATASETS_ROOT"]
+        + "\\"
+        + datasetName
+    )
+
+    path = (
+        current_app.config["DATASETS_ROOT"]
+        + "\\"
+        + datasetName
+        + "\\" 
+        + discretization_id
+    )
+    copy_file(original_path, path, datasetName)
+
+    email = g.user.Email
+    dataset_name = get_dataset_name(disc)
+    KL_id = str(uuid.uuid4())
+    create_directory(dataset_name, discretization_id, KL_id)
+
+    # saves the data to the database
+    KL = models.negative_karma_lego(
+        discretization=disc,
+        id=KL_id,
+        max_gap=max_gap,
+        min_ver_support=vertical_support,
+        maximum_negatives=maximum_negatives,
+        ofo = ofo,
+        a_s = as1,
+        bc=bc
+    )
+    status = models.karmalego_status(karmalego_id=KL_id)
+    db = get_db()
+    db.session.add(KL)
+    db.session.add(status)
+    db.session.commit()
+
+    #run negative sequential mining algo
+    command = __create_negative_mining_command(vertical_support, max_gap, maximum_negatives, ofo, as1, bc, dataset_name, discretization_id, KL_id)
+    run_algo = run_cpp_program(command)
+    if run_algo == 0:
+        _fix_outputfile(dataset_name, discretization_id, KL_id)
+        status.finished = True
+        status.success = True
+        db.session.commit()
+    if run_algo == 1:
+        status.finished = True
+        status.success = False
+        db.session.commit()
+        return jsonify({"message": "A problem as occurred with karmalego, try different parameters"}), 500
+    
+    if to_visualize == "true":
+            print("finished KL, starting Guy's preprocess")
+            # call Guy's and Tali's preprocessing
+            process = negative_preprocessing(KL_id)
+            result, _vis_id = process.start()
+            if result != preprocessins_results.GOOD:
+                tasks.send_email(
+                    message=f"Subject: problem with preprocessing", receiver_email=email
+                )
+                return jsonify({"message": "A problem as occurred with preprocessing"}), 500
+
+            print("finished Guy's and Tali's preprocess")
+
+    return jsonify({"message": "karmalego created!", "KL_id": KL_id}), 200
+
+
+def copy_file(source_dir, destination_dir, datasetName):
+    file_name = datasetName + ".ascii"
+    output_name = "negative.ascii"
+    source_file = os.path.join(source_dir, file_name)
+    destination_file = os.path.join(destination_dir, output_name)
+    
+    try:
+        shutil.copy(source_file, destination_file)
+        current_app.logger.info("File copied successfully!")
+    except IOError as e:
+        current_app.logger.info(f"Unable to copy file: {e}")
+
+
+def create_disc_directory(dataset_name, discretization_id):
+    """
+    This function creates a directory for a KarmaLego run inside its parent discretization folder.
+    :param dataset_name: the name of the datset
+    :param discretization_id: the id of the discretization
+    :param kl_id: the id of the karma lego run
+    :return:
+    """
+    path = (
+        current_app.config["DATASETS_ROOT"]
+        + "/"
+        + dataset_name
+        + "/"
+        + discretization_id
+    )
+
+    if os.path.exists(path):
+        current_app.logger.info("Discretization folder already exist!")
+        return path
+    try:
+        os.mkdir(path)
+    except OSError as e:
+        current_app.log_exception(e)
+    else:
+        current_app.logger.info("Successfully created the directory %s " % path)
+    return path

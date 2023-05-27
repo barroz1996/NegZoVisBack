@@ -151,6 +151,34 @@ def get_data_on_dataset():
     negatives_to_return = list(map(negative_to_TIM, negative_arr))
 
     return jsonify({"disc": disc_to_return, "karma": karma_to_return, "negative": negatives_to_return})
+    
+@bp.route("/getIsSequential", methods=["GET"])
+@validate_args(["datasetName"], False)
+def get_is_sequential_dataset():
+    """
+    This function returns all of the existing discretization and KL runs for a given dataset.
+    param id: the name of the dataset
+    :return:the data on a specific dataset
+    """
+    dataset_name = request.args.get("datasetName")
+    if check_for_authorization(g.user, dataset_name):
+        return jsonify({"message": "don't try to fool me, you don't own it!"}), 403
+    
+    file = dataset_name + ".ascii"
+
+    path = os.path.join(
+        current_app.config["DATASETS_ROOT"],
+        dataset_name,
+        file
+    )
+
+    def is_ascii_file(file_path):
+        print(file_path)
+        return os.path.exists(file_path)
+    
+    is_sequential = is_ascii_file(path)
+    
+    return jsonify({"answer": is_sequential})
 
 
 @bp.route("/incrementViews", methods=["POST"])

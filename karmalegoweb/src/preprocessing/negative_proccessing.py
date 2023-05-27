@@ -22,6 +22,7 @@ from karmalegoweb.src.manage_data.data_checks import (
 )
 from karmalegoweb.src.preprocessing.negatives_settings import settings
 from karmalegoweb.src.preprocessing.negative_prerequisites import validate as validate_prerequisites
+from karmalegoweb.src.preprocessing.negative_prerequisites import validate_seq as validate_seq_prerequisites
 from karmalegoweb.src.preprocessing.tirps import create_tree_structures, merge_trees, save_tree
 
 from karmalegoweb.src.views.tali import call_tali_preprocess
@@ -57,44 +58,37 @@ class negative_preprocessing:
 
         self.tree = None
 
-    # def start(self):
-    #     try:
-    #         result = validate_prerequisites(self.karmalego_id)
-    #         current_app.logger.debug("PREPROCESSING - Validated")
-    #         if result != preprocessins_results.GOOD:
-    #             return result, None
-    #         self.__create_run()
+    def start(self):
+        try:
+            result = validate_seq_prerequisites(self.karmalego_id)
+            current_app.logger.debug("PREPROCESSING - Validated")
+            if result != preprocessins_results.GOOD:
+                return result, None
 
-    #         self.__parse()
+            self.__create_run()
 
-    #         self.__create_settings_file()
-    #         entities = None
-    #         if self.has_entities:
-    #             entities = create_entities(self.dataset_name, self.visualization.id)
-    #             current_app.logger.debug("PREPROCESSING - Created Entities File")
-    #         create_states(self.dataset_name, self.discretization_id, self.visualization.id)
-    #         current_app.logger.debug("PREPROCESSING - Created States File")
-    #         self.__create_tree_structures()
-    #         self.__calculate_extra_parameters(entities)
-    #         self.__create_search_files()
+            self.__create_settings_file()
 
-    #         save_tree(self.dataset_name, self.visualization.id, self.tree)
-    #         current_app.logger.debug("PREPROCESSING - Saved Tirps Tree")
+            if self.has_entities:
+                create_entities(self.dataset_name, self.visualization.id)
+                current_app.logger.debug("PREPROCESSING - Created Entities File")
 
-    #         # calling Tali's preprocess to start
-    #         call_tali_preprocess(
-    #             visualization_id=self.visualization.id, dataset_name=self.dataset_name
-    #         )
+            current_app.logger.debug("PREPROCESSING - Created States File")
 
-    #         finish_preproccess_run(self.visualization.id, True)
+            # calling Tali's preprocess to start
+            # call_tali_preprocess(
+            #     visualization_id=self.visualization.id, dataset_name=self.dataset_name
+            # )
 
-    #         return preprocessins_results.GOOD, self.visualization.id
+            finish_preproccess_run(self.visualization.id, True)
 
-    #     except Exception as e:
-    #         if self.visualization is not None:
-    #             finish_preproccess_run(self.visualization.id, False, str(e))
-    #         current_app.log_exception(e)
-    #         return preprocessins_results.EXCEPTION, None
+            return preprocessins_results.GOOD, self.visualization.id
+
+        except Exception as e:
+            if self.visualization is not None:
+                finish_preproccess_run(self.visualization.id, False, str(e))
+            current_app.log_exception(e)
+            return preprocessins_results.EXCEPTION, None
         
     def start_negative(self):
         try:
@@ -131,6 +125,7 @@ class negative_preprocessing:
             return preprocessins_results.EXCEPTION, None
 
     def __create_run(self):
+        current_app.logger.debug("Starting creating run")
         self.visualization = create_empty_visualization(self.karmalego_id, self.dataset_name)
         current_app.logger.debug("PREPROCESSING - Run Created")
 
