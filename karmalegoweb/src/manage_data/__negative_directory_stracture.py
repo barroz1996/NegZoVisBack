@@ -146,8 +146,6 @@ def get_root_entities_path(dataset_name, visualization_id):
 
 
 def get_visualization_dir_path(dataset_name, visualization_id):
-    print(dataset_name)
-    print(visualization_id)
     return __dataset_join(dataset_name, VISUALIZATION_DIR_NAME, visualization_id)
 
 

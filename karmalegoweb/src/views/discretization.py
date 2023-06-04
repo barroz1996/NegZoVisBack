@@ -70,7 +70,7 @@ def add_new_disc():
     form = request.form
     files = request.files
 
-    paa = int(form["PAA"]) if "PAA" in form else None
+    paa = int(form["PAA"]) if "PAA" in form else 0
     abstraction_method = form["AbMethod"] if "AbMethod" in form else None
     interpolation_gap = int(form["InterpolationGap"]) if "InterpolationGap" in form else None
     dataset_name = form["datasetName"] if "datasetName" in form else None
@@ -131,7 +131,7 @@ def add_new_disc():
         elif abstraction_method == "Abstraction Per Property":
             builder = abstraction_per_property(dataset_name)
             result = builder.make(preprocessing_file, states_file, abstraction_method_file)
-        elif abstraction_method == "Empty":
+        elif abstraction_method == "Sequential":
             builder = empty(dataset_name)
             result = builder.make()
 

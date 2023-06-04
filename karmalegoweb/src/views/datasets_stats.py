@@ -240,6 +240,8 @@ def deleteDataset():
     if discretizations is not None:
         for disc in discretizations:
             karmalegos = models.karma_lego.query.filter_by(discretization_name=disc.id)
+            if karmalegos is None:
+                karmalegos = models.negative_karma_lego.query.filter_by(discretization_name=disc.id)
             if karmalegos is not None:
                 karmalegos_objects += karmalegos
                 for kl in karmalegos:

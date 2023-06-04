@@ -308,6 +308,8 @@ def add_tim():
 def deleteKarmaLego():
     karmalego = models.karma_lego.query.filter_by(id=request.form["karma_id"]).first()
     if karmalego is None:
+        karmalego = models.negative_karma_lego.query.filter_by(id=request.form["karma_id"]).first()
+    if karmalego is None:
         return "Could not found requested karmalego", 400
     path = os.path.join(
         current_app.config["DATASETS_ROOT"],

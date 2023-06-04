@@ -26,7 +26,6 @@ from karmalegoweb.src.manage_data.manage_files import (
 def create_empty_visualization(karmalego_id, dataset_name):
     run_id = str(uuid.uuid4())
     new_run = models.run(id=run_id)
-    print("t1")
     visualization_id = str(uuid.uuid4())
     new_visualization = models.Visualization(
         id=visualization_id, KL_id=karmalego_id, dataset=dataset_name, run=new_run.id
@@ -34,9 +33,7 @@ def create_empty_visualization(karmalego_id, dataset_name):
     db = get_db()
     db.session.add(new_visualization)
     db.session.add(new_run)
-    print("t2")
     create_visualization_folder(dataset_name, visualization_id)
-    print("t3")
     db.session.commit()
 
     return new_visualization
