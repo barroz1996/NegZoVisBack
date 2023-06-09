@@ -113,6 +113,10 @@ def get_states():
     if visualization is None:
         return "Could not found requested visualization", 400
 
+    negative = models.negative_karma_lego.query.filter_by(id=visualization.KL_id).first()
+    if negative is not None:
+        return "Negative Dataset", 200
+
     path = os.path.join(
         current_app.config["DATASETS_ROOT"],
         visualization.dataset,

@@ -141,6 +141,7 @@ def add_new_disc():
         discretization(
             list(files.keys()),
             abstraction_method == "Abstraction Per Property",
+            abstraction_method == "Sequential",
             dataset_name,
             builder.id,
             bins_names,

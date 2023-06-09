@@ -39,6 +39,7 @@ def __send_email_task(message, receiver_email):
 def discretization(
     request_files_names,
     is_per_property,
+    is_sequential,
     dataset_name,
     disc_id,
     binsNames,
@@ -49,15 +50,14 @@ def discretization(
 ):
     try:
         os.system(command)
-
         process_kl_input(disc_path)
-        status = name_bins(dataset_path, disc_path, request_files_names, is_per_property, binsNames)
 
-        if status == 1:
-            success = validate_file_creation(disc_path)
-        if status == 0:
+        if is_sequential:
             success = True
-
+        else:
+            name_bins(dataset_path, disc_path, request_files_names, is_per_property, binsNames)
+            success = validate_file_creation(disc_path)
+        
     except Exception as e:
         success = False
         current_app.log_exception(e)

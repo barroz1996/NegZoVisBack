@@ -25,8 +25,6 @@ def validate_file_creation(path):
 
 
 def name_bins(dataset_path, disc_path, request_files_names, is_per_property, binsNames):
-    if len(request_files_names) == 0:
-        return 0
     vmap_path = os.path.join(dataset_path, "VMap.csv")
     states_path = os.path.join(disc_path, "states.csv")
     states_gradient_path = os.path.join(disc_path, "states_kb_gradient.csv")
@@ -36,6 +34,8 @@ def name_bins(dataset_path, disc_path, request_files_names, is_per_property, bin
         df = pd.read_csv(states_gradient_path)
     else:
         df = pd.read_csv(states_path)
+
+    df["TemporalPropertyName"] = "random"
 
     def add_name_to_df(row):
         filtered_rows = vmap_df[vmap_df["Variable ID"] == row["TemporalPropertyID"]]
@@ -69,7 +69,6 @@ def name_bins(dataset_path, disc_path, request_files_names, is_per_property, bin
         else:
             df.to_csv(states_path, index=False)
 
-    return 1
             
 def process_kl_input(disc_path):
     for filename in os.listdir(disc_path):
