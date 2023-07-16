@@ -126,6 +126,13 @@ class karmalego_status(db.Model):
     msg = db.Column(db.String(150), nullable=True)
 
 
+class negative_karmalego_status(db.Model):
+    karmalego_id = db.Column(db.String(150), db.ForeignKey("negative_karma_lego.id"), primary_key=True)
+    finished = db.Column(db.Boolean, nullable=False, default=False)
+    success = db.Column(db.Boolean, nullable=True)
+    msg = db.Column(db.String(150), nullable=True)
+
+
 class run(db.Model):
     id = db.Column(db.String(150), primary_key=True)
     finished = db.Column(db.Boolean, nullable=False, default=False)
@@ -162,6 +169,17 @@ class Visualization(db.Model):
     dataset = db.Column(db.String(150), db.ForeignKey("info_about_datasets.Name"))
     run = db.Column(db.String(150), db.ForeignKey("run.id"), nullable=False)
     KL_id = db.Column(db.String(150), db.ForeignKey("karma_lego.id"), nullable=True)
+
+class Negative_Visualization(db.Model):
+    """
+    This table holds all the info about the dataSet that are ready to visualize
+    Authors: Roi Omer Yiftah
+    """
+
+    id = db.Column(db.String(50), primary_key=True)
+    dataset = db.Column(db.String(150), db.ForeignKey("info_about_datasets.Name"))
+    run = db.Column(db.String(150), db.ForeignKey("run.id"), nullable=False)
+    KL_id = db.Column(db.String(150), db.ForeignKey("negative_karma_lego.id"), nullable=True)
 
 
 class negative_karma_lego(db.Model):

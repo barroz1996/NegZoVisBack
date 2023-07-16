@@ -112,6 +112,8 @@ def get_data_on_dataset():
 
     def model_to_TIM(model):
         status = models.karmalego_status.query.filter_by(karmalego_id=model.id).first()
+        if status is None:
+            status = models.negative_karmalego_status.query.filter_by(karmalego_id=model.id).first()
         return {
             "BinsNumber": str(model.discretization.NumStates),
             "discId": model.discretization.id,
@@ -129,7 +131,7 @@ def get_data_on_dataset():
         }
     
     def negative_to_TIM(model):
-        status = models.karmalego_status.query.filter_by(karmalego_id=model.id).first()
+        status = models.negative_karmalego_status.query.filter_by(karmalego_id=model.id).first()
         return {
             "discId": model.discretization.id,
             "BinsNumber": str(model.discretization.NumStates),
@@ -240,16 +242,19 @@ def deleteDataset():
     if discretizations is not None:
         for disc in discretizations:
             karmalegos = models.karma_lego.query.filter_by(discretization_name=disc.id)
-            if karmalegos is None:
+            if karmalegos.first() is None:
                 karmalegos = models.negative_karma_lego.query.filter_by(discretization_name=disc.id)
             if karmalegos is not None:
                 karmalegos_objects += karmalegos
                 for kl in karmalegos:
                     karmalego_status = models.karmalego_status.query.filter_by(karmalego_id=kl.id)
+                    if karmalego_status.first() is None:
+                        karmalego_status = models.negative_karmalego_status.query.filter_by(karmalego_id=kl.id)
                     karmalego_status_objects += karmalego_status
 
     visualization_paths = []
     visualizations = models.Visualization.query.filter_by(dataset=dataset_name)
+    neg_visualizations = models.Negative_Visualization.query.filter_by(dataset=dataset_name)
     for visualization in visualizations:
         visualization_path = os.path.join(
             current_app.config["DATASETS_ROOT"],
@@ -259,8 +264,22 @@ def deleteDataset():
         )
         visualization_paths.append(visualization_path)
 
+        print(visualization_paths)
+
+    for visualization in neg_visualizations:
+        visualization_path = os.path.join(
+            current_app.config["DATASETS_ROOT"],
+            dataset_name,
+            "visualizations",
+            visualization.id,
+        )
+        visualization_paths.append(visualization_path)
+
+
     db = get_db()
     for visualization in visualizations:
+        db.session.delete(visualization)
+    for visualization in neg_visualizations:
         db.session.delete(visualization)
     for visual_path in visualization_paths:
         shutil.rmtree(visual_path)
@@ -349,6 +368,45 @@ def get_visualizations():
                 settings["success"] = False
             data_sets_details.append(settings)
 
+    neg_visualizations = models.Negative_Visualization.query.all()
+    data_sets_details = list()
+    for visualization in neg_visualizations:
+        run = models.run.query.filter_by(id=visualization.run).first()
+        info = models.info_about_datasets.query.filter_by(Name=visualization.dataset).first()
+        user = models.Users.query.filter_by(Email=info.Email).first()
+
+        if run.finished:
+            settings = {
+                "data_set_name": info.Name,
+                "category": info.category,
+                "size": info.size,
+                "permission": info.Permissions,
+                "description": info.Description,
+                "owner": f"{user.FName} {user.LName}",
+                "id": visualization.id,
+                "imported": visualization.KL_id is None,
+            }
+
+            if run.success:
+                path = os.path.join(
+                    current_app.config["DATASETS_ROOT"],
+                    visualization.dataset,
+                    "visualizations",
+                    visualization.id,
+                )
+                settings_path = os.path.join(path, "settings.json")
+
+                if os.path.exists(settings_path):
+                    with open(settings_path, "r") as fs:
+                        settings.update(json.load(fs))
+                    settings["success"] = True
+                else:
+                    current_app.logger.warning("Could not find settings file for visualization")
+                    settings["success"] = False
+            else:
+                settings["success"] = False
+            data_sets_details.append(settings)
+
     return jsonify({"DataSets": data_sets_details})
 
 
@@ -359,7 +417,9 @@ def get_visualization_info():
     visualization_id = request.args.get("visualization_id")
     visualization = models.Visualization.query.filter_by(id=visualization_id).first()
     if not visualization:
-        return "Request visualization could not be found", 400
+        visualization = models.Negative_Visualization.query.filter_by(id=visualization_id).first()
+        if not visualization:
+            return "Request visualization could not be found", 400
 
     info = models.info_about_datasets.query.filter_by(Name=visualization.dataset).first()
     user = models.Users.query.filter_by(Email=info.Email).first()
@@ -396,7 +456,9 @@ def get_visualization_details():
     visualization_id = request.args.get("visualization_id")
     visualization = models.Visualization.query.filter_by(id=visualization_id).first()
     if not visualization:
-        return "Request visualization could not be found", 400
+        visualization = models.Negative_Visualization.query.filter_by(id=visualization_id).first()
+        if not visualization:
+            return "Request visualization could not be found", 400
     if visualization.KL_id is None:
         return "There is no visualization details on an imported dataset", 400
     karmalego = models.karma_lego.query.filter_by(id=visualization.KL_id).first()

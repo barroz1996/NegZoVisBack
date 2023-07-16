@@ -5,7 +5,7 @@ from karmalegoweb.src import models
 
 # Return None if the karmalego with the given id does not have a visualization
 def karma_lego_to_visualization(karmalego_id):
-    visualization = models.Visualization.query.filter_by(KL_id=karmalego_id).first()
+    visualization = models.Negative_Visualization.query.filter_by(KL_id=karmalego_id).first()
     if not visualization:
         return None
     return visualization.id

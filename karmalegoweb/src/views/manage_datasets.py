@@ -73,6 +73,7 @@ def delete_dataset():
     db = get_db()
 
     models.Visualization.query.filter_by(dataset=dataset_name).delete()
+    models.Negative_Visualization.query.filter_by(dataset=dataset_name).delete()
 
     discretizations = models.discretization.query.filter_by(dataset_Name=dataset_name)
     for discretization in discretizations:
@@ -82,6 +83,7 @@ def delete_dataset():
             tims = models.negative_karma_lego.query.filter_by(discretization_name=discretization.id)
         for tim in tims:
             models.karmalego_status.query.filter_by(karmalego_id=tim.id).delete()
+            models.negative_karmalego_status.query.filter_by(karmalego_id=tim.id).delete()
 
             db.session.delete(tim)
         db.session.delete(discretization)

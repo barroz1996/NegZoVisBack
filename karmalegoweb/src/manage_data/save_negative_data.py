@@ -27,7 +27,7 @@ def create_empty_visualization(karmalego_id, dataset_name):
     run_id = str(uuid.uuid4())
     new_run = models.run(id=run_id)
     visualization_id = str(uuid.uuid4())
-    new_visualization = models.Visualization(
+    new_visualization = models.Negative_Visualization(
         id=visualization_id, KL_id=karmalego_id, dataset=dataset_name, run=new_run.id
     )
     db = get_db()
@@ -40,7 +40,7 @@ def create_empty_visualization(karmalego_id, dataset_name):
 
 
 def finish_preproccess_run(visualization_id, success, message=""):
-    visualization = models.Visualization.query.filter_by(id=visualization_id).first()
+    visualization = models.Negative_Visualization.query.filter_by(id=visualization_id).first()
     run_id = visualization.run
     run = models.run.query.filter_by(id=run_id).first()
     run.finished = True

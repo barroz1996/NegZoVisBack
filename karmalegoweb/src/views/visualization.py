@@ -21,6 +21,8 @@ bp = Blueprint("visualization", __name__, "/")
 @validate_args(["visualization"])
 def delete_visualization():
     visualization = models.Visualization.query.filter_by(id=request.form["visualization"]).first()
+    if visualizations is None:
+        visualizations = models.Negative_Visualization.query.filter_by(id=request.form["visualization"]).first()
     run_id = visualization.run
     run = models.run.query.filter_by(id=run_id).first()
 
@@ -50,7 +52,9 @@ def delete_visualization():
 def get_entities():
     visualization = models.Visualization.query.filter_by(id=request.form["visualization"]).first()
     if visualization is None:
-        return "Could not found requested visualization", 400
+        visualization = models.Negative_Visualization.query.filter_by(id=request.form["visualization"]).first()
+        if visualization is None:
+            return "Could not found requested visualization", 400
 
     visualization_path = os.path.join(
         current_app.config["DATASETS_ROOT"],
@@ -85,7 +89,9 @@ def get_vmap_file_from_visualization():
     """
     visualization = models.Visualization.query.filter_by(id=request.form["visualization"]).first()
     if visualization is None:
-        return "Could not found requested visualization", 400
+        visualization = models.Negative_Visualization.query.filter_by(id=request.form["visualization"]).first()
+        if visualization is None:
+            return "Could not found requested visualization", 400
     dataset_name = visualization.dataset
     if os.path.exists(os.path.join(current_app.config["DATASETS_ROOT"], dataset_name)):
         try:
@@ -111,7 +117,9 @@ def get_vmap_file_from_visualization():
 def get_states():
     visualization = models.Visualization.query.filter_by(id=request.form["visualization"]).first()
     if visualization is None:
-        return "Could not found requested visualization", 400
+        visualization = models.Negative_Visualization.query.filter_by(id=request.form["visualization"]).first()
+        if visualization is None:
+            return "Could not found requested visualization", 400
 
     negative = models.negative_karma_lego.query.filter_by(id=visualization.KL_id).first()
     if negative is not None:
@@ -138,7 +146,9 @@ def get_states():
 def initiate_tirps():
     visualization = models.Visualization.query.filter_by(id=request.form["visualization"]).first()
     if visualization is None:
-        return "Could not found requested visualization", 400
+        visualization = models.Negative_Visualization.query.filter_by(id=request.form["visualization"]).first()
+        if visualization is None:
+            return "Could not found requested visualization", 400
     
     negative =  models.negative_karma_lego.query.filter_by(id=visualization.KL_id).first()
     if negative is not None:
@@ -198,7 +208,9 @@ def initiate_tirps():
 def get_sub_tree():
     visualization = models.Visualization.query.filter_by(id=request.form["visualization"]).first()
     if visualization is None:
-        return "Could not found requested visualization", 400
+        visualization = models.Negative_Visualization.query.filter_by(id=request.form["visualization"]).first()
+        if visualization is None:
+            return "Could not found requested visualization", 400
 
     path = os.path.join(
         current_app.config["DATASETS_ROOT"],
@@ -231,7 +243,9 @@ def get_sub_tree():
 def searchTirps():
     visualization = models.Visualization.query.filter_by(id=request.form["visualization"]).first()
     if visualization is None:
-        return "Could not found requested visualization", 400
+        visualization = models.Negative_Visualization.query.filter_by(id=request.form["visualization"]).first()
+        if visualization is None:
+            return "Could not found requested visualization", 400
 
     path = os.path.join(
         current_app.config["DATASETS_ROOT"],
@@ -346,7 +360,9 @@ def searchTirps():
 def find_Path_of_tirps():
     visualization = models.Visualization.query.filter_by(id=request.form["visualization"]).first()
     if visualization is None:
-        return "Could not found requested visualization", 400
+        visualization = models.Negative_Visualization.query.filter_by(id=request.form["visualization"]).first()
+        if visualization is None:
+            return "Could not found requested visualization", 400
 
     path = os.path.join(
         current_app.config["DATASETS_ROOT"],

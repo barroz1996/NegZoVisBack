@@ -281,8 +281,17 @@ def delete_descritization():
             karmalego_status = models.karmalego_status.query.filter_by(
                 karmalego_id=karmalego.id
             ).first()
+            if karmalego_status is None:
+                karmalego_status = models.negative_karmalego_status.query.filter_by(
+                    karmalego_id=karmalego.id
+                ).first()
             karmalegos_statuses.append(karmalego_status)
             visualizations = models.Visualization.query.filter_by(KL_id=karmalego.id)
+            first_visualizations = visualizations.first()
+            print("!!!!!!!!!!!!!!!!!")
+            print(first_visualizations)
+            if not first_visualizations:
+                visualizations = models.Negative_Visualization.query.filter_by(KL_id=karmalego.id)
             if visualizations is not None:
                 for visualization in visualizations:
                     visualization_path = os.path.join(

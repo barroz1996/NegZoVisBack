@@ -111,7 +111,7 @@ def add_tim():
             a_s = as1,
             bc=bc
         )
-        status = models.karmalego_status(karmalego_id=KL_id)
+        status = models.negative_karmalego_status(karmalego_id=KL_id)
         db = get_db()
         db.session.add(KL)
         db.session.add(status)
@@ -323,9 +323,22 @@ def deleteKarmaLego():
     karmalego_status = models.karmalego_status.query.filter_by(
         karmalego_id=request.form["karma_id"]
     ).first()
+    negative_karmalego_status = models.negative_karmalego_status.query.filter_by(
+        karmalego_id=request.form["karma_id"]
+    ).first()
     visualizations = models.Visualization.query.filter_by(KL_id=request.form["karma_id"])
+    neg_visualizations = models.Negative_Visualization.query.filter_by(KL_id=request.form["karma_id"])
     visualizations_paths = []
     for visualization in visualizations:
+        visualization_path = os.path.join(
+            current_app.config["DATASETS_ROOT"],
+            request.form["datasetName"],
+            "visualizations",
+            visualization.id,
+        )
+        visualizations_paths.append(visualization_path)
+
+    for visualization in neg_visualizations:
         visualization_path = os.path.join(
             current_app.config["DATASETS_ROOT"],
             request.form["datasetName"],
@@ -343,6 +356,7 @@ def deleteKarmaLego():
 
     db.session.delete(karmalego)
     db.session.delete(karmalego_status)
+    db.session.delete(negative_karmalego_status)
     db.session.commit()
 
     return "Deleted karmalego successfully"
@@ -608,7 +622,7 @@ def add_sequential_tim():
         a_s = as1,
         bc=bc
     )
-    status = models.karmalego_status(karmalego_id=KL_id)
+    status = models.negative_karmalego_status(karmalego_id=KL_id)
     db = get_db()
     db.session.add(KL)
     db.session.add(status)
