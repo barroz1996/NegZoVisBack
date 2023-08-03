@@ -292,6 +292,6 @@ def convert_to_negative(raw_data_path):
     with open(negative_path, 'w') as f:
         for key, value in sorted_dict.items():
             entID, timestamp = key[0], key[1]
-            f.write(f"{entID} {timestamp} {len(value)} {' '.join(value)} \n")
+            f.write(f"{entID} {timestamp} {len(value)} {' '.join(value)}\n")
 
     return True

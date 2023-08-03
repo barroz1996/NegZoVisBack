@@ -392,3 +392,42 @@ def find_Path_of_tirps():
     response = make_response(jsonify({"Path": json_path_of_tirps}))
     response.headers["Access-Control-Allow-Origin"] = "*"
     return response
+
+
+@bp.route("/getNumOfEntities", methods=["POST"])
+@login_required
+@validate_args(["visualization"])
+def get_num_of_entities():
+    visualization = models.Visualization.query.filter_by(id=request.form["visualization"]).first()
+    if visualization is None:
+        visualization = models.Negative_Visualization.query.filter_by(id=request.form["visualization"]).first()
+        if visualization is None:
+            return "Could not found requested visualization", 400
+        
+    KL_ID = visualization.KL_id
+    karmalego = models.karma_lego.query.filter_by(id=KL_ID).first()
+    if karmalego is None:
+        karmalego = models.negative_karma_lego.query.filter_by(id=KL_ID).first()
+
+    discritization_id = karmalego.discretization_name
+
+    path = os.path.join(
+        current_app.config["DATASETS_ROOT"],
+        visualization.dataset,
+        discritization_id,
+        "negative.ascii"
+    )
+
+
+    with open(path, "r") as file:
+        lines = file.readlines()
+
+    # Get the last line
+    last_line = lines[-1]
+
+    # Extract the first number from the last line
+    first_number_last_row = last_line.split()[0]
+    response = make_response(jsonify({"NumOfEnttites": first_number_last_row}))
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
+

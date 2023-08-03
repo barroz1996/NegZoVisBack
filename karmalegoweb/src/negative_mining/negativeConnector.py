@@ -21,8 +21,11 @@ def run_cpp_program(command):
     # # Run the program
     if compile.returncode == 1:
         return 1
-    proc = subprocess.run(command)
-    if proc.returncode == 0:
+    try:
+        proc = subprocess.run(command, timeout=120)
+        if proc.returncode == 0:
+            return 0
+        else:
+            return 1
+    except subprocess.TimeoutExpired:
         return 0
-    else:
-        return 1
